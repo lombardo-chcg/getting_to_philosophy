@@ -6,63 +6,44 @@
 
 source helpers.sh
 
-count=0
+[[ "$1" ]] || { usage; exit 1; }
+
+stepNumber=0
 wikipediaBaseUrl="https://en.wikipedia.org"
-
-extractHtmlTitleValue() {
-  echo $(grep --color=never "<title>.*</title>" \
-    | sed "s/<title>//" | sed "s/<\/title>//" \
-    | sed "s|[[:space:]]\-[[:space:]]Wikipedia||"
-  )
-}
-
-removeAnythingWithParens() {
-  echo $( grep --color=never "<p>.*" \
-      | sed "s|[[:space:]]([^)]*)||g"
-  )
-}
-
-getFirstWikipediaInternalLink() {
-  echo $(grep --color=never -o -m 1 "href=\"/wiki/.*\"")
-}
-
-split() {
-  stringToSplit=$1
-
-  echo ${!stringToSplit}
-}
 
 startingTitle=$(curl -s $1 | extractHtmlTitleValue )
 
 getNextArticle() {
+
   echo -e "\n*************"
   site="$1"
-  count=$2
+  stepNumber=$2
 
   curl -s $site > temp
 
   title=$(cat temp | extractHtmlTitleValue)
 
-  [[ ${title} == "Philosophy"  ]] && { printSuccessMessage $title $count; exit 0; }
+  [[ ${title} == "Philosophy"  ]] && { printSuccessMessage $title $stepNumber; exit 0; }
 
-  echo -e "Current article is $(printGreen "$title") \nthis is stop number $(printGreen $count)"
+  echo -e "Current article is $(printGreen "$title") \nthis is step number $(printGreen $stepNumber)"
 
-  firstLink=$(cat temp | removeAnythingWithParens | getFirstWikipediaInternalLink)
+  validLinks=$(cat temp | removeTextInParentheses | getFirstWikipediaInternalLink)
 
-  stringarray=($firstLink)
-  realFirstLink=$(echo ${stringarray[0]})
+  arrayOfValidLinks=($validLinks)
 
-  strippedLink=$(echo $realFirstLink \
+  firstLink=$(echo ${arrayOfValidLinks[0]})
+
+  strippedLink=$(echo $firstLink \
     | sed "s/href=\"//" \
     | sed "s/\"//"
   )
 
   nextPage="$wikipediaBaseUrl$strippedLink"
 
-  echo -e "\nnext stop is $(printBlue $nextPage)"
-  let count=count+1
+  echo -e "\nnext step is $(printBlue $nextPage)"
+  let stepNumber=stepNumber+1
 
-  getNextArticle "$nextPage" $count
+  getNextArticle "$nextPage" $stepNumber
 }
 
 getNextArticle "$1" 0
