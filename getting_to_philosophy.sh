@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Clicking on the first non-parenthesized, non-italicized link
-# Ignoring external links, links to the current page, or red links
-# Stopping when reaching "Philosophy", a page with no links or a page that does not exist, or when a loop occurs
-
 source helpers.sh
 
 [[ "$1" ]] || { usage; exit 1; }
